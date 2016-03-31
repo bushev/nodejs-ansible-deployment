@@ -1,0 +1,11 @@
+{
+  "name": "nodejs-ansible-deployment",
+  "version": "1.0.0",
+  "author": "Yuriy Bushev <bushevuv@gmail.com>",
+  "scripts": {
+    "start": "node ./server.js"
+  },
+  "dependencies": {
+    "mongoose": "4.4.10"
+  }
+}
