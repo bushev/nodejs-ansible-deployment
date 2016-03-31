@@ -1,0 +1,31 @@
+---
+
+- include: setup-debian.yml
+
+# TODO: Remove this task after Ansible 2.x npm module bug is fixed. See:
+# https://github.com/ansible/ansible-modules-extras/issues/1375
+- name: Ensure pm2 is installed (to run Node.js apps).
+  npm:  name=pm2 global=yes state=present
+  when: nodejs_pm2
+
+- name: Ensure pm2 is at the latest release.
+  npm:  name=pm2 global=yes state=latest
+  when: nodejs_pm2
+
+# TODO: Remove this task after Ansible 2.x npm module bug is fixed. See:
+# https://github.com/ansible/ansible-modules-extras/issues/1375
+- name: Ensure npm global packages are installed.
+  npm:
+    name: "{{ item.name }}"
+    version: "{{ item.version | default('') }}"
+    global: yes
+    state: present
+  with_items: "{{ nodejs_npm_global_packages }}"
+
+- name: Ensure npm global packages are at the latest release.
+  npm:
+    name: "{{ item.name }}"
+    version: "{{ item.version | default('') }}"
+    global: yes
+    state: latest
+  with_items: "{{ nodejs_npm_global_packages }}"

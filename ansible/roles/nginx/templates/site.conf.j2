@@ -1,0 +1,47 @@
+# Define your "upstream" servers - the
+# servers request will be sent to
+upstream site {
+    server 127.0.0.1:8080;
+}
+
+# Define the Nginx server
+# This will proxy any non-static directory
+server {
+    listen 80;
+    server_name xxx.xxx.xxx.xxx;
+
+    # Allow underscores in header names. Ex. api_key.
+    underscores_in_headers on;
+
+    access_log /var/log/nginx/site-access.log;
+    error_log  /var/log/nginx/site-error.log error;
+
+    # Handle static files so they are not proxied to NodeJS
+    # You may want to also hand these requests to other upstream
+    # servers, as you can define more than one!
+    location ~ ^/(images/|img/|javascript/|js/|css/|stylesheets/|flash/|media/|static/|robots.txt|humans.txt|favicon.ico) {
+      root /var/www/nodejs-ansible-deployment/public;
+      access_log off;
+      expires max;
+      log_not_found off;
+    }
+
+    # pass the request to the node.js server
+    # with some correct headers for proxy-awareness
+    location / {
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-NginX-Proxy true;
+
+        # Pass source request headers to upstream servers
+        proxy_pass_request_headers on;
+
+        proxy_pass http://site/;
+        proxy_redirect off;
+
+        # Handle Web Socket connections
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+}

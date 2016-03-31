@@ -1,0 +1,61 @@
+---
+- name:  Configure WEB server
+  hosts: staging
+  roles:
+    - git
+    - nginx
+    - nodejs
+    - mongodb
+
+  vars:
+    branch: 'master'
+    project_folder: 'nodejs-ansible-deployment'
+
+  vars_prompt:
+    - name:   'github_login'
+      prompt: 'Enter your GitHub login'
+      private: no
+
+    - name:   'github_password'
+      prompt: 'Enter your GitHub password'
+      private: yes
+
+  tasks:
+    # Create directories
+    - file: path=/var/www/nodejs-ansible-deployment state=directory mode=0666
+
+    - name:  ssh-keyscan the git server
+      shell: ssh-keyscan -H -t dsa github.com >> ~/.ssh/known_hosts 2>&1
+
+    - name: Checkout from github.com
+      git:  "repo=https://{{ github_login }}:{{ github_password }}@github.com/bushev/nodejs-ansible-deployment.git
+             dest=/repos/{{ nodejs-ansible-deployment }}
+             version={{ branch }}"
+      register: git_checkout
+
+    - name: Update project files
+      command: cp {{ item.opts }} {{ item.src }} {{ item.dest }}
+      with_items:
+        - { src: '/repos/{{ nodejs-ansible-deployment }}/', dest: '/var/www/{{ nodejs-ansible-deployment }}/', opts: '-TR' }
+      when: git_checkout.changed
+
+    - npm:   path=/var/www/{{ nodejs-ansible-deployment }}/app production=yes
+      when:  git_checkout.changed
+
+    - bower: path=/var/www/{{ nodejs-ansible-deployment }}
+      when:  git_checkout.changed
+
+    - name: Deleting all apps
+      command: >
+        pm2 delete all
+      register: command_result
+      failed_when: "'[ERROR]' in command_result.stderr"
+      when: git_checkout.changed
+
+    - name: Starting apps
+      environment:
+        NODE_ENV: 'staging'
+      command: "pm2 start processes.json"
+      args:
+        chdir: "/var/www/{{ nodejs-ansible-deployment }}"
+      when: git_checkout.changed

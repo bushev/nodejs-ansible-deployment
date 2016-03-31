@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "my-app",
+      "script": "server.js",
+      "max_memory_restart": "300M"
+    }
+  ]
+}

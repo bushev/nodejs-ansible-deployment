@@ -1,0 +1,9 @@
+---
+
+nodejs_version: "5.x"
+
+nodejs_pm2: true
+
+nodejs_npm_global_packages: [
+  {name: 'bower'}
+]
